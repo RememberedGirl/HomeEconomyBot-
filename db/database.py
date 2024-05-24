@@ -24,6 +24,12 @@ async def add_user(username):
             user = User(username=username)
             session.add(user)
 
+# Функция для получения пользователя по chat_id
+async def get_user(chat_id):
+    async with AsyncSessionLocal as session:
+        result = await session.execute(select(User).filter_by(username=chat_id))
+        return result.scalar_one_or_none()
+
 # Функция для получения списка всех пользователей
 async def get_users():
     async with AsyncSessionLocal as session:

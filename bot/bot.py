@@ -1,27 +1,46 @@
 import logging
-from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
+import asyncio
 
-from config import API_TOKEN
-from handlers import handle_start, handle_help, handle_add_expense, handle_view_expenses
-from db import init_db
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters.command import Command
 
-# Настройка логирования
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from config import API_TOKEN, USER_ID
+from db.database import add_user, get_user
+
 logging.basicConfig(level=logging.INFO)
-
-# Инициализация бота и диспетчера
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot, storage=MemoryStorage())
+dp = Dispatcher(bot=bot) #класс обработки входящих событий
+scheduler = AsyncIOScheduler()
 
-# Регистрация обработчиков
-dp.message.register(handle_start, commands=['start'])
-dp.message.register(handle_help, commands=['help'])
-dp.message.register(handle_add_expense, commands=['add_expense'])
-dp.message.register(handle_view_expenses, commands=['view_expenses'])
 
-async def on_startup(dispatcher):
-    await init_db()
+@dp.message(Command('start'))
+async def start_handler(message: types.Message):
+    chat_id = message.chat.id
+
+    # Проверяем, зарегистрирован ли уже пользователь
+    user = await get_user(chat_id)
+
+    if user:
+        await message.answer("Вы уже зарегистрированы в системе.")
+    else:
+        # Добавляем пользователя в базу данных
+        await add_user(chat_id)
+        await message.answer("Вы успешно зарегистрированы в системе.")
+
+def ger_recent_event():
+    return "ееее"
+
+async def send_event(bot: Bot):
+    event_list = ger_recent_event()
+    await bot.send_message(USER_ID, f"спам {event_list}")
+
+async def main():
+    scheduler.add_job(send_event, "interval", seconds=10, args=(bot,))
+    scheduler.start()
+    await dp.start_polling(bot)
+
 
 if __name__ == '__main__':
-    from aiogram import executor
-    executor.start_polling(dp, on_startup=on_startup)
+    print("start")
+    asyncio.run(main())
