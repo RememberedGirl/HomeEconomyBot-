@@ -1,0 +1,3 @@
+#TODO API_TOKEN
+API_TOKEN = 'API_TOKEN'
+DATABASE_NAME = 'HomeEconomyBot.db'
