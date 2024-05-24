@@ -1,10 +1,14 @@
 import os
+from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.future import select
 
 from config import DATABASE_NAME
-from models import User, Expense, Base
+# Изменим импорт моделей на новый путь
+from db.models import User, Expense, Category, Base
 
+# Изменим путь для создания URL базы данных
 DATABASE_URL = f"sqlite+aiosqlite:///{os.path.join(os.path.dirname(__file__), DATABASE_NAME)}"
 
 # Создаем асинхронный движок AsyncEngine для работы с базой данных
@@ -12,11 +16,6 @@ engine = create_async_engine(DATABASE_URL, echo=True)
 
 # Создаем объект AsyncSessionLocal для работы с базой данных
 AsyncSessionLocal = AsyncSession(bind=engine)
-
-# Функция для создания всех таблиц в базе данных
-async def create_all_tables():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 # Функция для добавления нового пользователя
 async def add_user(username):
@@ -32,32 +31,28 @@ async def get_users():
         return result.scalars().all()
 
 # Функция для добавления нового расхода
-async def add_expense(user_id, date, price, category):
+async def add_expense(user_id, date, price, category_name):
     async with AsyncSessionLocal as session:
         async with session.begin():
+            # Получаем объект категории из базы данных по имени категории
+            category = await session.execute(select(Category).filter(Category.name == category_name))
+            category = category.scalar_one_or_none()
+
+            # Если категория не найдена, добавляем новую категорию в базу данных
+            if category is None:
+                category = Category(name=category_name)
+                session.add(category)
+                await session.flush()  # Вызываем flush, чтобы получить значение ID новой категории
+
+            # Создаем объект расхода с указанием категории
             expense = Expense(user_id=user_id, date=date, price=price, category=category)
             session.add(expense)
 
-# Вызов каждой функции для проверки
-async def test_functions():
-    # Создаем все таблицы в базе данных
-    await create_all_tables()
+# Функция для добавления новой категории
+async def add_category(name):
+    async with AsyncSessionLocal as session:
+        async with session.begin():
+            category = Category(name=name)
+            session.add(category)
 
-    # Добавляем пользователя
-    await add_user("test_user")
 
-    # Получаем список всех пользователей
-    users = await get_users()
-    print("Список пользователей:")
-    for user in users:
-        print(user.username)
-
-    # Добавляем расход
-    await add_expense(1, "2024-05-25", 50.0, "food")
-    print("Расход успешно добавлен.")
-
-# Запуск проверки функций
-if __name__ == "__main__":
-    import asyncio
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(test_functions())
