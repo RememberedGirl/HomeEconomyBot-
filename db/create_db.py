@@ -1,11 +1,9 @@
 import os
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.future import select
-from database import Base
+from sqlalchemy.ext.asyncio import create_async_engine
 
-# Путь к файлу базы данных
-DATABASE_NAME = 'family_bot.db'
+from config import DATABASE_NAME
+from models import Base
+
 
 # Формируем URL для подключения к базе данных
 DATABASE_URL = f"sqlite+aiosqlite:///{os.path.join(os.path.dirname(__file__), DATABASE_NAME)}"
@@ -13,8 +11,6 @@ DATABASE_URL = f"sqlite+aiosqlite:///{os.path.join(os.path.dirname(__file__), DA
 # Создаем асинхронный движок базы данных
 engine = create_async_engine(DATABASE_URL, echo=True)
 
-# Создаем сессию для работы с базой данных
-AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 # Функция для создания таблиц в базе данных
 async def init_db():

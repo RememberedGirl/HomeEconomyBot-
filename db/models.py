@@ -1,27 +1,25 @@
-import os
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from models import Base
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship
 
-# Путь к файлу базы данных
-DATABASE_NAME = 'family_bot.db'
+# Базовый класс для определения моделей данных
+Base = declarative_base()
 
-# Формируем URL для подключения к базе данных
-DATABASE_URL = f"sqlite+aiosqlite:///{os.path.join(os.path.dirname(__file__), DATABASE_NAME)}"
+# Определяем модель данных для таблицы пользователей
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
 
-# Создаем асинхронный движок базы данных
-engine = create_async_engine(DATABASE_URL, echo=True)
+# Определяем модель данных для таблицы расходов
+class Expense(Base):
+    __tablename__ = 'expenses'
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(DateTime)
+    price = Column(Float)
+    category = Column(String)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship("User", back_populates="expenses")
 
-# Создаем сессию для работы с базой данных
-AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+# Определяем связь между пользователем и его расходами
+User.expenses = relationship("Expense", back_populates="user")
 
-# Функция для создания таблиц в базе данных
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-# Инициализация базы данных
-if __name__ == "__main__":
-    import asyncio
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(init_db())
