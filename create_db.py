@@ -2,7 +2,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from config import DATABASE_NAME
-from models import Base
+from db.models import Base
 
 
 # Формируем URL для подключения к базе данных
