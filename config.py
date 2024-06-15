@@ -1,4 +1,0 @@
-#TODO API_TOKEN
-USER_ID=""
-API_TOKEN = 'API_TOKEN'
-DATABASE_NAME = 'HomeEconomyBot.db'
